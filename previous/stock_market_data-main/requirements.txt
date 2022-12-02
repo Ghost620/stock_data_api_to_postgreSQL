@@ -1,0 +1,9 @@
+# python==3.10
+python-dotenv==0.21.0
+flask_sqlalchemy
+numpy==1.23.4
+pandas==1.5.1
+psycopg2-binary==2.9.5
+requests==2.28.1
+sshtunnel==0.4.0
+# if the above doesn't work for sshtunnel, try: conda install -c conda-forge sshtunnel
