@@ -119,7 +119,7 @@ if DB_ENV_PROD==0:
     options.add_argument('--disable-dev-shm-usage')
 
 
-    driver = uc.Chrome(service=Service(ChromeDriverManager().install()),use_subprocess=True,options=options)
+    driver = uc.Chrome(service=Service(ChromeDriverManager().install()),options=options)
     driver.get('https://fmpcloud.io/api/v3')
     driver.implicitly_wait(30)
 
