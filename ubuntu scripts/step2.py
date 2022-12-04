@@ -57,7 +57,7 @@ if DB_ENV_PROD==0:
 elif DB_ENV_PROD==1:    
     REMOTE_HOST = os.getenv('REMOTE_HOST')
     REMOTE_USERNAME = os.getenv('REMOTE_USERNAME')
-    PKEY_PATH= './humble.pem'
+    PKEY_PATH= os.environ.get('PKEY_PATH')
 
     conn_params = {
         'database': os.getenv('CLOUD_DB_NAME'), 
