@@ -198,7 +198,7 @@ if DB_ENV_PROD==0:
 if DB_ENV_PROD==1:
     REMOTE_HOST = os.getenv('REMOTE_HOST')
     REMOTE_USERNAME = os.getenv('REMOTE_USERNAME')
-    PKEY_PATH= os.environ.get('PKEY_PATH')
+
     
     conn_params = {
     'database': os.getenv('CLOUD_DB_NAME'), 
@@ -208,25 +208,25 @@ if DB_ENV_PROD==1:
     'port': int(os.getenv('CLOUD_DB_PORT'))
     }
     
-    def open_ssh_tunnel(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
+#     def open_ssh_tunnel(func):
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
 
-            tunnel = SSHTunnelForwarder((REMOTE_HOST),
-                ssh_pkey=PKEY_PATH,
-                ssh_username=REMOTE_USERNAME,
-                remote_bind_address=(conn_params['host'],int(conn_params['port'])),
-                )
-            tunnel.start()
-#             conn_params['port'] = tunnel.local_bind_port
+#             tunnel = SSHTunnelForwarder((REMOTE_HOST),
+#                 ssh_pkey=PKEY_PATH,
+#                 ssh_username=REMOTE_USERNAME,
+#                 remote_bind_address=(conn_params['host'],int(conn_params['port'])),
+#                 )
+#             tunnel.start()
+# #             conn_params['port'] = tunnel.local_bind_port
 
-            result = func(*args, **kwargs)
+#             result = func(*args, **kwargs)
 
-            tunnel.stop()
-            return result
-        return wrapper
+#             tunnel.stop()
+#             return result
+#         return wrapper
     
-    @open_ssh_tunnel
+    # @open_ssh_tunnel
     def query_make_table():
         conn = psycopg2.connect(**conn_params)
         cur = conn.cursor()
@@ -247,7 +247,7 @@ if DB_ENV_PROD==1:
         
     query_make_table()
     
-    @open_ssh_tunnel
+    # @open_ssh_tunnel
     def insert_burst_data(data):
         print('Started Inserting data into database')
         conn = psycopg2.connect(**conn_params)
