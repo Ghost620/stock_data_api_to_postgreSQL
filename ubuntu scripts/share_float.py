@@ -111,7 +111,7 @@ if DB_ENV_PROD==0:
     required_companies=[]
     required_companies_symbol=[]
 
-    options = uc.ChromeOptions()
+    options = webdriver.ChromeOptions()
     options.headless=True
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
@@ -119,7 +119,7 @@ if DB_ENV_PROD==0:
     options.add_argument('--disable-dev-shm-usage')
 
 
-    driver = uc.Chrome(service=Service(ChromeDriverManager().install()),options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
     driver.get('https://fmpcloud.io/api/v3')
     driver.implicitly_wait(30)
 
@@ -278,14 +278,14 @@ if DB_ENV_PROD==1:
     required_companies=[]
     required_companies_symbol=[]
 
-    options = uc.ChromeOptions()
+    options = webdriver.ChromeOptions()
     options.headless=True
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 
-    driver = uc.Chrome(service=Service(ChromeDriverManager().install()),use_subprocess=True,options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
     driver.get('https://fmpcloud.io/api/v3')
     driver.implicitly_wait(30)
 
