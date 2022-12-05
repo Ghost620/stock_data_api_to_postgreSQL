@@ -272,6 +272,7 @@ if DB_ENV_PROD==1:
     data_stock_list=response_stock_list.json()
     required_companies=[]
     required_companies_symbol=[]
+    required_companies_symbol_data=[]
 
 #     options = uc.ChromeOptions()
 #     options.headless=True
@@ -281,41 +282,34 @@ if DB_ENV_PROD==1:
 #     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
 #     driver.get('https://fmpcloud.io/api/v3')
 #     driver.implicitly_wait(30)
-
-
+    print('Starting getting the symbols!')
+    
+    
     for company in data_stock_list:
         if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'): 
-            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
-#             specific_stock=driver.execute_script('''
-#                 var datas
-#                 await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
-#                 "headers": {
-#                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-#                 "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-#                 "cache-control": "no-cache",
-#                 "pragma": "no-cache",
-#                 "sec-fetch-dest": "document",
-#                 "sec-fetch-mode": "navigate",
-#                 "sec-fetch-site": "none",
-#                 "sec-fetch-user": "?1",
-#                 "upgrade-insecure-requests": "1"
-#               },
-#               "referrerPolicy": "strict-origin-when-cross-origin",
-#               "body": null,
-#               "method": "GET",
-#               "mode": "cors",
-#               "credentials": "include"
-#             }).then((response) => response.json()).then((data)=>datas=data)
-#             return datas ''')
-            required_companies.append([company['symbol'],company['exchange'],company['exchangeShortName']
-                                       ,specific_stock[0]['country']])
             required_companies_symbol.append(company['symbol'])
-            
+            required_companies_symbol_data.append([company['symbol'],company['exchange'],company['exchangeShortName']])
+    print('Collected Symbols!')
+    
+    print('Started Getting each symbols data!')
+    
+    
+    for idx,symbol_data in enumerate(required_companies_symbol_data):
+        if len(required_companies)%1000==0:
+            print(f'{len(required_companies)} have been collected!')
+        specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{symbol_data[0]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+        try:
+            required_companies.append([symbol_data[0],symbol_data[1],symbol_data[2],
+                                       specific_stock[0]['country']])
+        except Exception as e:
+            print(e)
+    print('Collected Symbol data')
     response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data_shares_float=response_shares_float.json()
     records=0
     all_data=[]
-    print('Started Scraping and Storing data in database.')
+    print('Started Scraping float data and Storing data in database.')
+    
     for company in data_shares_float:
         if (company['symbol'] in required_companies_symbol):
             try:
@@ -333,6 +327,7 @@ if DB_ENV_PROD==1:
             except Exception as e:
                 print(e)
                 all_data.append(insert_data)
+                
     insert_burst_data(all_data)
     send_mail(send_from='faghost6201@gmail.com',
         subject='Share Float Table Status',
