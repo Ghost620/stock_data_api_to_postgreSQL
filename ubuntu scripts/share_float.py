@@ -272,38 +272,21 @@ if DB_ENV_PROD==1:
     data_stock_list=response_stock_list.json()
     required_companies=[]
     required_companies_symbol=[]
-    required_companies_symbol_data=[]
 
-#     options = uc.ChromeOptions()
-#     options.headless=True
-#     options.add_argument('--headless')
-#     options.add_argument('--disable-gpu')
 
-#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
-#     driver.get('https://fmpcloud.io/api/v3')
-#     driver.implicitly_wait(30)
     print('Starting getting the symbols!')
     
     
+
     for company in data_stock_list:
-        if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'): 
+        if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'):  
+            if len(required_companies_symbol)%1000==0:
+                print(f'{len(required_companies_symbol)} records has been collected!')
+            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+            required_companies.append([company['symbol'],company['exchange'],company['exchangeShortName']
+                                       ,specific_stock[0]['country']])
+
             required_companies_symbol.append(company['symbol'])
-            required_companies_symbol_data.append([company['symbol'],company['exchange'],company['exchangeShortName']])
-    print('Collected Symbols!')
-    
-    print('Started Getting each symbols data!')
-    
-    
-    for idx,symbol_data in enumerate(required_companies_symbol_data):
-        if len(required_companies)%1000==0:
-            print(f'{len(required_companies)} have been collected!')
-        specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{symbol_data[0]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
-        try:
-            required_companies.append([symbol_data[0],symbol_data[1],symbol_data[2],
-                                       specific_stock[0]['country']])
-        except Exception as e:
-            print(e)
-    print('Collected Symbol data')
     response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data_shares_float=response_shares_float.json()
     records=0
