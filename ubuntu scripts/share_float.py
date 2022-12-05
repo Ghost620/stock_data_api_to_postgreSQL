@@ -9,15 +9,11 @@ from dotenv import load_dotenv
 from functools import wraps
 import os
 import smtplib
-from sshtunnel import SSHTunnelForwarder
+# from sshtunnel import SSHTunnelForwarder
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-import undetected_chromedriver as uc
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+
 
 def send_mail(send_from: str,
               subject: str,
@@ -106,52 +102,50 @@ if DB_ENV_PROD==0:
     conn.commit()
     cur.close()
 
-    response_stock_list=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}')
+    response_stock_list=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}', headers={"Content-Type": "application/json"})
     data_stock_list=response_stock_list.json()
     required_companies=[]
     required_companies_symbol=[]
 
-    options = webdriver.ChromeOptions()
-    options.headless=True
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+#     options = uc.ChromeOptions()
+#     options.headless=True
+#     options.add_argument('--headless')
+#     options.add_argument('--disable-gpu')
 
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
-    driver.get('https://fmpcloud.io/api/v3')
-    driver.implicitly_wait(30)
+#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
+#     driver.get('https://fmpcloud.io/api/v3')
+#     driver.implicitly_wait(30)
 
 
     for company in data_stock_list:
         if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'):  
-            specific_stock=driver.execute_script('''
-                var datas
-                await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
-                "headers": {
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "cache-control": "no-cache",
-                "pragma": "no-cache",
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-              },
-              "referrerPolicy": "strict-origin-when-cross-origin",
-              "body": null,
-              "method": "GET",
-              "mode": "cors",
-              "credentials": "include"
-            }).then((response) => response.json()).then((data)=>datas=data)
-            return datas ''')
+            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+#             specific_stock=driver.execute_script('''
+#                 var datas
+#                 await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
+#                 "headers": {
+#                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+#                 "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+#                 "cache-control": "no-cache",
+#                 "pragma": "no-cache",
+#                 "sec-fetch-dest": "document",
+#                 "sec-fetch-mode": "navigate",
+#                 "sec-fetch-site": "none",
+#                 "sec-fetch-user": "?1",
+#                 "upgrade-insecure-requests": "1"
+#               },
+#               "referrerPolicy": "strict-origin-when-cross-origin",
+#               "body": null,
+#               "method": "GET",
+#               "mode": "cors",
+#               "credentials": "include"
+#             }).then((response) => response.json()).then((data)=>datas=data)
+#             return datas ''')
             required_companies.append([company['symbol'],company['exchange'],company['exchangeShortName']
                                        ,specific_stock[0]['country']])
 
             required_companies_symbol.append(company['symbol'])
-    response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}')
+    response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data_shares_float=response_shares_float.json()
 
     conn=database_connection()
@@ -195,10 +189,11 @@ if DB_ENV_PROD==0:
         send_to=['bayo.billing@gmail.com','owaisahmed142002@gmail.com','alikhanhamza434@gmail.com','faghost6201@gmail.com'],
         files=[])
     print('Completed!')
+
 if DB_ENV_PROD==1:
     REMOTE_HOST = os.getenv('REMOTE_HOST')
     REMOTE_USERNAME = os.getenv('REMOTE_USERNAME')
-
+    # PKEY_PATH= os.environ.get('PKEY_PATH')
     
     conn_params = {
     'database': os.getenv('CLOUD_DB_NAME'), 
@@ -226,7 +221,7 @@ if DB_ENV_PROD==1:
 #             return result
 #         return wrapper
     
-    # @open_ssh_tunnel
+#     @open_ssh_tunnel
     def query_make_table():
         conn = psycopg2.connect(**conn_params)
         cur = conn.cursor()
@@ -247,7 +242,7 @@ if DB_ENV_PROD==1:
         
     query_make_table()
     
-    # @open_ssh_tunnel
+#     @open_ssh_tunnel
     def insert_burst_data(data):
         print('Started Inserting data into database')
         conn = psycopg2.connect(**conn_params)
@@ -273,51 +268,50 @@ if DB_ENV_PROD==1:
 
  
         
-    response_stock_list=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}')
+    response_stock_list=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data_stock_list=response_stock_list.json()
     required_companies=[]
     required_companies_symbol=[]
 
-    options = webdriver.ChromeOptions()
-    options.headless=True
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+#     options = uc.ChromeOptions()
+#     options.headless=True
+#     options.add_argument('--headless')
+#     options.add_argument('--disable-gpu')
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
-    driver.get('https://fmpcloud.io/api/v3')
-    driver.implicitly_wait(30)
+#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
+#     driver.get('https://fmpcloud.io/api/v3')
+#     driver.implicitly_wait(30)
 
 
     for company in data_stock_list:
-        if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'):  
-            specific_stock=driver.execute_script('''
-                var datas
-                await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
-                "headers": {
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "cache-control": "no-cache",
-                "pragma": "no-cache",
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-              },
-              "referrerPolicy": "strict-origin-when-cross-origin",
-              "body": null,
-              "method": "GET",
-              "mode": "cors",
-              "credentials": "include"
-            }).then((response) => response.json()).then((data)=>datas=data)
-            return datas ''')
+        if (company['exchangeShortName']=='NASDAQ') or (company['exchangeShortName']=='NYSE'): 
+            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+#             specific_stock=driver.execute_script('''
+#                 var datas
+#                 await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
+#                 "headers": {
+#                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+#                 "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+#                 "cache-control": "no-cache",
+#                 "pragma": "no-cache",
+#                 "sec-fetch-dest": "document",
+#                 "sec-fetch-mode": "navigate",
+#                 "sec-fetch-site": "none",
+#                 "sec-fetch-user": "?1",
+#                 "upgrade-insecure-requests": "1"
+#               },
+#               "referrerPolicy": "strict-origin-when-cross-origin",
+#               "body": null,
+#               "method": "GET",
+#               "mode": "cors",
+#               "credentials": "include"
+#             }).then((response) => response.json()).then((data)=>datas=data)
+#             return datas ''')
             required_companies.append([company['symbol'],company['exchange'],company['exchangeShortName']
                                        ,specific_stock[0]['country']])
             required_companies_symbol.append(company['symbol'])
             
-    response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}')
+    response_shares_float=requests.get(f'https://fmpcloud.io/api/v4/shares_float/all?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data_shares_float=response_shares_float.json()
     records=0
     all_data=[]

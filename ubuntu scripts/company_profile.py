@@ -7,16 +7,9 @@ import re
 import pandas as pd
 from functools import wraps
 import time
-from sshtunnel import SSHTunnelForwarder
+# from sshtunnel import SSHTunnelForwarder
 import psycopg2
 import hashlib
-import undetected_chromedriver as uc
-
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -127,21 +120,19 @@ if DB_ENV_PROD==0:
     cur.execute(make_table_query)
     cur.close()
     conn.commit()
-    response=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}')
+    response=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data=response.json()
 
 
 
-    options = webdriver.ChromeOptions()
-    options.headless=True
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+#     options = uc.ChromeOptions()
+#     options.headless=True
+#     options.add_argument('--headless')
+#     options.add_argument('--disable-gpu')
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
-    driver.get('https://fmpcloud.io/api/v3')
-    driver.implicitly_wait(30)
+#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
+#     driver.get('https://fmpcloud.io/api/v3')
+#     driver.implicitly_wait(30)
 
 
     conn=database_connection()
@@ -167,27 +158,28 @@ if DB_ENV_PROD==0:
                     text=message,
                     send_to=['bayo.billing@gmail.com','owaisahmed142002@gmail.com','alikhanhamza434@gmail.com','faghost6201@gmail.com'],
                     files=[])
-            specific_stock=driver.execute_script('''
-                var datas
-                await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
-                "headers": {
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "cache-control": "no-cache",
-                "pragma": "no-cache",
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-              },
-              "referrerPolicy": "strict-origin-when-cross-origin",
-              "body": null,
-              "method": "GET",
-              "mode": "cors",
-              "credentials": "include"
-            }).then((response) => response.json()).then((data)=>datas=data)
-            return datas ''')
+            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+#             specific_stock=driver.execute_script('''
+#                 var datas
+#                 await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
+#                 "headers": {
+#                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+#                 "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+#                 "cache-control": "no-cache",
+#                 "pragma": "no-cache",
+#                 "sec-fetch-dest": "document",
+#                 "sec-fetch-mode": "navigate",
+#                 "sec-fetch-site": "none",
+#                 "sec-fetch-user": "?1",
+#                 "upgrade-insecure-requests": "1"
+#               },
+#               "referrerPolicy": "strict-origin-when-cross-origin",
+#               "body": null,
+#               "method": "GET",
+#               "mode": "cors",
+#               "credentials": "include"
+#             }).then((response) => response.json()).then((data)=>datas=data)
+#             return datas ''')
 
             specific_stock_data=list(specific_stock[0].values())        
             hash_string=specific_stock[0]['symbol']
@@ -234,7 +226,7 @@ if DB_ENV_PROD==1:
 #             return result
 #         return wrapper
 
-    
+#     @open_ssh_tunnel
     def query_make_table():
         conn = psycopg2.connect(**conn_params)
         cur = conn.cursor()
@@ -282,7 +274,7 @@ if DB_ENV_PROD==1:
         print('Query Executed!')
     
     query_make_table()
-    
+#     @open_ssh_tunnel
     def insert_burst_data(data):
         print('Started Inserting data into database')
         conn = psycopg2.connect(**conn_params)
@@ -317,42 +309,41 @@ if DB_ENV_PROD==1:
         print('All the data has been inserted!')
 
     all_data=[]
-    response=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}')
+    response=requests.get(f'https://fmpcloud.io/api/v3/stock/list?apikey={api_key}', headers={'Content-Type': 'application/json'})
     data=response.json()
-    options = webdriver.ChromeOptions()
-    options.headless=True
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+#     options = uc.ChromeOptions()
+#     options.headless=True
+#     options.add_argument('--headless')
+#     options.add_argument('--disable-gpu')
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
-    driver.get('https://fmpcloud.io/api/v3')
-    driver.implicitly_wait(30)
+#     driver = uc.Chrome(executable_path=ChromeDriverManager().install(),use_subprocess=True,options=options)
+#     driver.get('https://fmpcloud.io/api/v3')
+#     driver.implicitly_wait(30)
     print('Started Scraping the data!')
     for company in data:
         try:
-            specific_stock=driver.execute_script('''
-                var datas
-                await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
-                "headers": {
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "cache-control": "no-cache",
-                "pragma": "no-cache",
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-              },
-              "referrerPolicy": "strict-origin-when-cross-origin",
-              "body": null,
-              "method": "GET",
-              "mode": "cors",
-              "credentials": "include"
-            }).then((response) => response.json()).then((data)=>datas=data)
-            return datas ''')
+            specific_stock=requests.get(f'https://fmpcloud.io/api/v3/profile/{company["symbol"]}?apikey={api_key}', headers={'Content-Type': 'application/json'}).json()
+#             specific_stock=driver.execute_script('''
+#                 var datas
+#                 await fetch("https://fmpcloud.io/api/v3/profile/'''+company["symbol"]+'''?apikey='''+api_key+'''", {
+#                 "headers": {
+#                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+#                 "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+#                 "cache-control": "no-cache",
+#                 "pragma": "no-cache",
+#                 "sec-fetch-dest": "document",
+#                 "sec-fetch-mode": "navigate",
+#                 "sec-fetch-site": "none",
+#                 "sec-fetch-user": "?1",
+#                 "upgrade-insecure-requests": "1"
+#               },
+#               "referrerPolicy": "strict-origin-when-cross-origin",
+#               "body": null,
+#               "method": "GET",
+#               "mode": "cors",
+#               "credentials": "include"
+#             }).then((response) => response.json()).then((data)=>datas=data)
+#             return datas ''')
 
             specific_stock_data=list(specific_stock[0].values())        
             hash_string=specific_stock[0]['symbol']
@@ -368,5 +359,6 @@ if DB_ENV_PROD==1:
             
     insert_burst_data(all_data)
     print('Completed Collecting Data!')
+
 
 
